@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+
+{% block title %} Real-time particle sensor plot {% endblock %}
+
+{% block main %}
+        <ul id="location_checkbox_list">Location
+            {% for location in locationList %}
+                <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}}>{{location}}</li>
+            {% endfor %}
+        </ul>
+        <pre> From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">   <input type="button" onClick='cb();' value="Query data"></pre> 
+        <input type='button' onClick="download();" value="download">
+        <input type='button' onClick="delete_history();" value="delete">
+        <a id="download"></a>
+        <ul id="plotList">
+            <!--
+            {% for location in locationList %}
+                   <li id={{location}}>
+                       <h1>{{location}}</h1>
+                       <div id="chart{{location}}"></div>
+                   </li>
+            {% endfor %}
+            -->
+        </ul>
+{% endblock %}
+
+{% block script %}
+<script src="../static/js/plotly-latest.min.js"></script>
+<script src="../static/js/google_api_ajax.js"></script>
+<script>
+    returnJSONFormat = {
+        "downloadFile" : false,
+        "location"   : [],
+        "sizeBinary": 15
+    }
+    
+    function get_location(){
+        var location = [];
+        document.querySelectorAll('.location').forEach((item, idx) =>{
+            if (item.checked){
+                location.push(`${item.name}`);
+            }
+        });
+        return location
+    }
+    
+    function get_date(){
+        return [document.getElementById('startDate').value,document.getElementById('endDate').value]
+    }
+    
+    const plotList = document.getElementById("plotList");
+    
+    function cb(){
+        var returnJSON = returnJSONFormat;
+        returnJSON.location =  get_location();
+        if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
+        else{            
+            [returnJSON.startDate, returnJSON.endDate] = get_date();
+            $.getJSON({
+                url: "/callback"+"?returnJSON="+JSON.stringify(returnJSON), success: plot
+            })
+        }
+    }
+    
+    function plot(result){
+        const plotListElement = document.getElementById("plotList");
+        plotListElement.innerHTML = '';
+        Object.entries(result).forEach(([key, value]) => {
+            let chart = document.createElement('li');
+            
+            let chartHeader = document.createElement('h2');
+            chartHeader.innerHTML = `${key}`;
+            chart.appendChild(chartHeader);
+            
+            let chartPlot = document.createElement('div');
+            chartPlot.id = `chart${key}`;
+            chart.appendChild(chartPlot);
+            
+            plotListElement.appendChild(chart);
+            
+            Plotly.newPlot(`chart${key}`, JSON.parse(`${value}`), {});
+        });
+    }
+    
+    function download(){
+        var returnJSON = returnJSONFormat;
+        returnJSON.location =  get_location();
+        if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
+        else{            
+            [returnJSON.startDate, returnJSON.endDate] = get_date();
+            returnJSON.downloadFile = true;
+            
+            var url = "/callback"+"?returnJSON="+JSON.stringify(returnJSON);
+            var req = new XMLHttpRequest();
+            req.open("GET", url, true);
+            req.responseType = "blob";
+            req.onload = function(event){
+                var blob = req.response;
+                var filename = req.getResponseHeader('content-disposition').split('filename=')[1].split(';')[0];
+                var link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                }
+            req.send();
+        }
+    }
+    
+    function delete_history(){
+        var returnJSON = returnJSONFormat;
+        returnJSON.location =  get_location();
+        if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
+        else{            
+            [returnJSON.startDate, returnJSON.endDate] = get_date();
+            let check_delete = prompt("Type 'delete' to delete the data in " + returnJSON.location +" from " + returnJSON.startDate + " to " + returnJSON.endDate);
+            if (check_delete == "delete"){
+                $.get({
+                    url: "/delete"+"?returnJSON="+JSON.stringify(returnJSON)
+                })
+            }
+            
+            console.log("OK");
+        }
+    }
+
+</script>
+{% endblock %}

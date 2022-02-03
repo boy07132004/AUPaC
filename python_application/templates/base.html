@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        <style> 
+            ul#location_checkbox_list li{display : inline }
+            ul#particle_size_checkbox_list li{display : inline }
+            pre, ul, li, input {font-size:5vh}
+            input[type="checkbox"]{
+                width: 5vh; height: 5vh;
+                cursor: pointer;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <input type="button" onclick="javascript:location.href='/realtime'" value = "Real-time">
+        <input type="button" onclick="javascript:location.href='/history'" value = "History">
+        <main>
+            
+            
+            {% block main %}{% endblock %}
+        </main>
+    </body>
+
+    {% block script %}{% endblock %}
+</html>

@@ -1,0 +1,66 @@
+version: "3.4"
+
+x-env-variables: &common-variables
+    INFLUXDB_DB: test
+    INFLUXDB_ADMIN_USER: root
+    INFLUXDB_ADMIN_PASSWORD: ml6a01
+    INFLUXDB_HTTP_AUTH_ENABLED: "true"
+    DATABASE_IP: 172.28.1.1
+    CSVFOLDER: /file_share/
+    TZ: Asia/Taipei
+    
+services: 
+    particle_database: 
+
+        image: influxdb:1.8.10
+        volumes: 
+            - "db_data:/var/lib/influxdb"
+        restart: always
+        networks:
+            internal:
+                ipv4_address: 172.28.1.1
+        ports:
+            - "8086:8086"
+            - "8083:8083"
+        environment: *common-variables
+    
+    python_application:
+        
+        restart: on-failure
+        build: ./python_application
+        volumes: 
+            - "$PWD/file_share:/file_share"
+        ports:
+            - "5000:5000"
+        devices:
+            - "/dev/ttyUSB0:/dev/ttyUSB0"
+        links:
+            - particle_database
+        networks:
+            internal:
+                ipv4_address: 172.28.1.2
+        environment: *common-variables
+    
+    apache_server:
+
+        image: httpd:2.4
+        restart: always
+        volumes: 
+            - "$PWD/file_share:/usr/local/apache2/htdocs/file/"
+        ports:
+            - "8080:80"
+        links:
+            - python_application
+        
+            
+        
+volumes:
+    db_data:
+    
+
+networks:
+    internal:
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.28.0.0/16

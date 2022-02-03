@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %} Real-time particle sensor plot {% endblock %}
+
+{% block main %}
+        <ul id="location_checkbox_list">Location
+                {% for location in locationList %}
+                    <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}} checked=true onChange="location_change_callback()">{{location}}</li>
+                {% endfor %}
+        </ul>
+        
+        <ul id="particle_size_checkbox_list">Particle Size : 
+                <li><input type="checkbox" id="0p5" class="size" checked="checked" onChange="size_change_callback()">0.3~0.5</li>
+                <li><input type="checkbox" id="1p0" class="size" checked="checked" onChange="size_change_callback()">0.5~1.0</li>
+                <li><input type="checkbox" id="2p5" class="size" checked="checked" onChange="size_change_callback()">1.0~2.5</li>
+        </ul>
+        <ul id="plotList">
+            {% for location in locationList %}
+                   <li id={{location}} class='test'>
+                       <h1>{{location}}</h1>
+                       <div id="chart{{location}}"></div>
+                   </li>
+            {% endfor %}
+        </ul>
+{% endblock %}
+
+{% block script %}
+<script src="../static/js/plotly-latest.min.js"></script>
+
+<script src="../static/js/google_api_ajax.js"></script>
+
+<script>
+    returnJSON = {
+        "downloadFile": false
+        }
+    //
+    function location_change_callback(){
+        returnJSON.location = [];
+        document.querySelectorAll('.location').forEach((item, idx) =>{
+            if (item.checked){
+                returnJSON.location.push(`${item.name}`);
+                document.getElementById(`${item.name}`).hidden = false;
+            }
+            else document.getElementById(`${item.name}`).hidden = true;
+        });
+    }
+    
+    function size_change_callback(){
+        returnJSON.sizeBinary = 0;
+        let idx = 0;
+        document.querySelectorAll('.size').forEach((item, idx) =>{
+            if (item.checked){
+                returnJSON.sizeBinary += 2**idx
+            }
+            idx++;
+        });
+    }
+    location_change_callback();
+    size_change_callback();
+    //
+    const plotList = document.getElementById("plotList");
+    function cb(){
+        if (returnJSON.location.length * returnJSON.sizeBinary){
+            if (plotList.hidden) plotList.hidden = false;
+            $.getJSON({
+                url: "/callback"+"?returnJSON="+JSON.stringify(returnJSON), success: plot
+            })
+        }
+        else {
+            if (plotList.hidden == false) plotList.hidden = true;
+        }
+    }
+    
+    function plot(result){
+        Object.entries(result).forEach(([key, value]) => {
+            Plotly.newPlot(`chart${key}`, JSON.parse(`${value}`), {});
+        });
+    }
+    
+    setInterval(cb, 5000);
+</script>
+{% endblock %}
