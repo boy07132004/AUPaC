@@ -5,6 +5,9 @@ import json
 import plotly
 import pandas as pd
 import plotly.graph_objects as go
+from numpy import array, arange
+from pykrige.ok import OrdinaryKriging
+import gstools as gs
 from influxdb import InfluxDBClient, DataFrameClient
 from flask import Flask, render_template, request, make_response
 
@@ -109,6 +112,53 @@ def delete_history():
     
     CLIENT.query(deleteSQL)
     return make_response("Ok", 200)
+
+@app.route("/contour")
+def contour_map():
+    return render_template("contour.html")
+
+@app.route("/contourCallback", methods=["GET"])
+def contour_callback():
+    size = request.args.get('size')
+    validSize = ['nc0p5', 'nc1p0', 'nc2p5']
+    if not size in validSize:
+        return make_response("Size error", 404)
+    
+    query = f"select last({size}) from sps30 group by location"
+    pixelMap = {"0307":[2.5, 3.0],
+                "A": [2.5, 27.0],
+                "B": [12.5, 15.0],
+                "C": [22.5, 3.0],
+                "D": [22.5, 27.0]                
+    }
+    gridx = arange(0.0, 25.0, 1.0)
+    gridy = arange(0.0, 30.0, 1.0)
+    queryResult = CLIENTDF.query(query)
+    result = []
+    while queryResult:
+        item = queryResult.popitem()
+        location, value = item[0][1][0][1], item[1].values[0][0]
+        if location in pixelMap:
+            result.append( pixelMap[location] + [value])
+    
+    result.append(pixelMap['A'] + [0])
+    result.append(pixelMap['B'] + [0])
+    result.append(pixelMap['C'] + [0])
+    result.append(pixelMap['D'] + [0])
+    
+    result = array(result)
+    cov_model = gs.Gaussian(dim=2, len_scale=4, anis=2, var=1, nugget=0.1)
+    OK1 = OrdinaryKriging(result[:, 0], result[:, 1], result[:, 2], cov_model)
+    z1, ss1 = OK1.execute("grid", gridx, gridy)
+    fig = go.Figure(data = go.Contour(z=pd.DataFrame(z1.data),
+                                  colorscale="rdylgn",
+                                  reversescale=True,
+                                  zmin=0,
+                                  zmax=20                           
+                            )
+    )
+    fig.update_traces(contours_coloring="fill", contours_showlabels=True)
+    return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0",debug=False)

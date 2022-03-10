@@ -11,11 +11,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt \
 	&& pip3 install pyzmq \
 	&& pip3 install ipywidgets==7.6.5
 
-COPY . .
-
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
 	&& echo $TZ > /etc/timezone \
 	&& dpkg-reconfigure -f noninteractive tzdata
-	
-RUN chmod a+x run.sh
+
+COPY ./run.sh run.sh
 CMD ["./run.sh"]

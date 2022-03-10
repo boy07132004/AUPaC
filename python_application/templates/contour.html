@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %} Real-time particle sensor plot {% endblock %}
+
+{% block main %}        
+<br>
+<input type="radio" name="size" value="nc0p5" checked>0.3~0.5
+<input type="radio" name="size" value="nc1p0">0.5~1.0
+<input type="radio" name="size" value="nc2p5">1.0~2.5
+<br>
+<div id="contourMap"></div>
+
+{% endblock %}
+
+{% block script %}
+<script src="../static/js/plotly-latest.min.js"></script>
+<script src="../static/js/google_api_ajax.js"></script>
+
+<script>
+    function cb(){
+        let size = $('input[name="size"]:checked').val();
+        $.getJSON({
+            url: "/contourCallback" + "?size=" +  size, success: plot
+        })
+    }
+    
+    function plot(result){
+        Plotly.newPlot("contourMap", result.data, {title: 'labels'});
+    }
+    
+    setInterval(cb, 2000);
+</script>
+{% endblock %}
