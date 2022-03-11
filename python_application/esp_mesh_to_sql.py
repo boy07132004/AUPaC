@@ -70,7 +70,7 @@ def main():
             insert(dataQueue)
         else:
             print(f"{datetime.now()} -> Queue empty")
-        time.sleep(5)
+        time.sleep(2)
             
 if __name__ == "__main__":
     CLIENT = InfluxDBClient(url=f'http://{DATABASEHOST}:8086', token=f'{USER}:{PASSWORD}', org='-')
