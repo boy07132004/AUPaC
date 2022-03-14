@@ -1,3 +1,4 @@
 build/
 file_share/*
 .DS_Store
+__pycache__

@@ -31,4 +31,4 @@ df.index = df.index.tz_convert(tz=TZ)
 
 if not df.empty:
     yesterday = datetime.now() - timedelta(1)
-    df.to_csv(f"{CSVFOLDER}{yesterday.strftime('%Y%m%d')}.csv")
+    df.to_csv(f"../{CSVFOLDER}{yesterday.strftime('%Y%m%d')}.csv")

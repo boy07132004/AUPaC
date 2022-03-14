@@ -78,9 +78,9 @@ void node_write_task(void *arg)
         }
 
         //size = sprintf(data, "%s", send_sps30_data_to_root());
-        size = send_sps30_data_to_root(data);
-        ret = mwifi_write(NULL, &data_type, data, size, true);
-        MDF_ERROR_CONTINUE(ret != MDF_OK, "mwifi_write, ret: %x", ret);
+        // size = send_sps30_data_to_root(data);
+        // ret = mwifi_write(NULL, &data_type, data, size, true);
+        // MDF_ERROR_CONTINUE(ret != MDF_OK, "mwifi_write, ret: %x", ret);
 
         vTaskDelay(1000 / portTICK_RATE_MS);
         gpio_set_level(2, cnt++%2);
@@ -199,7 +199,7 @@ void app_main()
     MDF_ERROR_ASSERT(mwifi_set_config(&config));
     MDF_ERROR_ASSERT(mwifi_start());
     
-    sps_setup();
+    // sps_setup();
 
     xTaskCreate(node_write_task, "node_write_task", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
 

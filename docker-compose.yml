@@ -6,7 +6,7 @@ x-env-variables: &common-variables
     INFLUXDB_ADMIN_PASSWORD: ml6a01
     INFLUXDB_HTTP_AUTH_ENABLED: "true"
     DATABASE_IP: 172.28.1.1
-    CSVFOLDER: /file_share/
+    CSVFOLDER: file_share/
     TZ: Asia/Taipei
     
 services: 
@@ -25,7 +25,7 @@ services:
         environment: *common-variables
     
     python_application:
-        
+
         restart: on-failure
         build: ./python_application
         volumes: 
@@ -35,6 +35,11 @@ services:
             - "5000:5000"
         devices:
             - "/dev/ttyUSB0:/dev/ttyUSB0"
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "10m"
+                max-file: "3"
         links:
             - particle_database
         networks:

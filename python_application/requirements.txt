@@ -1,10 +1,7 @@
 cython
 flask
-numpy==1.19
 pyserial==3.4
 plotly==5.2.2
 uwsgi==2.0.20
 influxdb-client==1.24.0
 influxdb==5.3.1
-pykrige
-gstools

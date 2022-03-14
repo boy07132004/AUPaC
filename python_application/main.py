@@ -148,10 +148,11 @@ def contour_callback():
                                   colorscale="rdylgn",
                                   reversescale=True,
                                   zmin=0,
-                                  zmax=100                           
+                                  zmax=100
                             )
     )
     fig.update_traces(contours_coloring="fill", contours_showlabels=True)
+    
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 if __name__ == "__main__":
