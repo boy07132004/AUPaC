@@ -13,16 +13,7 @@
         <input type='button' onClick="download();" value="download">
         <input type='button' onClick="delete_history();" value="delete">
         <a id="download"></a>
-        <ul id="plotList">
-            <!--
-            {% for location in locationList %}
-                   <li id={{location}}>
-                       <h1>{{location}}</h1>
-                       <div id="chart{{location}}"></div>
-                   </li>
-            {% endfor %}
-            -->
-        </ul>
+        <ul id="plotList"></ul>
 {% endblock %}
 
 {% block script %}

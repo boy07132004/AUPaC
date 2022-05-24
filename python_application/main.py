@@ -1,13 +1,17 @@
+from email import header
+import mimetypes
 import os
 import time
-import datetime
 import json
+from httplib2 import Response
 import plotly
+import datetime
 import pandas as pd
-import plotly.graph_objects as go
-from numpy import array, arange
-from pykrige.ok import OrdinaryKriging
 import gstools as gs
+from io import StringIO
+from numpy import array, arange
+import plotly.graph_objects as go
+from pykrige.ok import OrdinaryKriging
 from influxdb import InfluxDBClient, DataFrameClient
 from flask import Flask, render_template, request, make_response
 
@@ -37,6 +41,7 @@ def get_query_location():
     locationResults = CLIENT.query(query).get_points()
     locationList = [ result['value'] for result in list(locationResults) ]
     locationList.sort()
+
     return locationList
 
 @app.route('/')
@@ -58,18 +63,25 @@ def plot_graph():
         else:
             query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m"
         
+        query+= f" tz('{TZ}')"
         df = CLIENTDF.query(query)['sps30']
         df['time'] = df.index.tz_convert(tz=TZ)
         df.reset_index(drop=True, inplace=True)
         
         if ret['downloadFile']:
+            fileBuffer = StringIO()
+            df.to_csv(fileBuffer, encoding='utf-8')
+            csvOutput = fileBuffer.getvalue()
+            fileBuffer.close()
+
             fileLocation = "_".join(ret['location'])
             filename = f"{fileLocation}_{ret['startDate']}_{ret['endDate']}.csv"
-            resp = make_response(df.to_csv())
+            resp = make_response(csvOutput)
             resp.headers['Content-Disposition'] = f"attachment; filename={filename}"
             resp.headers['Content-type'] = 'text/csv'
-            
+
             return resp
+            
         
         sizeSelected = ret['sizeBinary']
         dataframeReturned = {}
@@ -98,6 +110,7 @@ def history():
     locationList = get_query_location()
     startDate    = datetime.date.today()
     endDate      = datetime.date.today() + datetime.timedelta(days = 1)
+
     return render_template('history.html', locationList=locationList, startDate=startDate, endDate=endDate)
 
 @app.route("/delete", methods=["GET"])
@@ -109,8 +122,8 @@ def delete_history():
     
     locationString = "' OR location='".join(locations)
     deleteSQL = f"DELETE FROM sps30 WHERE (location='{locationString}') AND (time>'{startDate}' AND time<'{endDate}');"     
-    
     CLIENT.query(deleteSQL)
+
     return make_response("Ok", 200)
 
 @app.route("/contour")

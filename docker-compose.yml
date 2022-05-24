@@ -47,16 +47,16 @@ services:
                 ipv4_address: 172.28.1.2
         environment: *common-variables
     
-    # apache_server:
+    apache_server:
 
-    #     image: httpd:2.4
-    #     restart: always
-    #     volumes: 
-    #         - "$PWD/file_share:/usr/local/apache2/htdocs/file/"
-    #     ports:
-    #         - "8080:80"
-    #     links:
-    #         - python_application
+        image: httpd:2.4
+        restart: always
+        volumes: 
+            - "$PWD/file_share:/usr/local/apache2/htdocs/file/"
+        ports:
+            - "8080:80"
+        links:
+            - python_application
         
             
         

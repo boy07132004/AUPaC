@@ -9,7 +9,9 @@ COPY ./requirements.txt requirements.txt
 
 RUN pip3 install --no-cache-dir -r requirements.txt \
 	&& pip3 install pyzmq \
-	&& pip3 install ipywidgets==7.6.5
+	&& pip3 install ipywidgets==7.6.5 \
+	&& rm -rf /usr/lib/python3/dist-packages/numpy* \
+	&& python3 -m pip install numpy==1.20.0 pykrige gstools
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
 	&& echo $TZ > /etc/timezone \
