@@ -1,3 +1,4 @@
+from collections import defaultdict
 from email import header
 import mimetypes
 import os
@@ -59,12 +60,36 @@ def plot_graph():
         if 'startDate' in ret:
             startDate = ret['startDate']
             endDate = ret['endDate']
-            query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time>'{startDate}' AND time<'{endDate}'"
+
+            if ret['threeMinAvg']:
+                query = f"SELECT MEAN(*) FROM sps30 WHERE location='{locations[0]}' AND " \
+                        + f"time>'{startDate}' AND time<'{endDate}' " \
+                        + "GROUP BY time(3m), location"
+            else:
+                query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time>'{startDate}' AND time<'{endDate}'"
         else:
             query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m"
         
         query+= f" tz('{TZ}')"
-        df = CLIENTDF.query(query)['sps30']
+        df = CLIENTDF.query(query)
+        print('sps30' in df)
+        if 'sps30' in df:
+            _df = df['sps30']
+        else:
+            print(df.keys())
+            for k, v in df.items():
+                location = k[1][0][1]
+                _df = v.dropna()
+                break
+
+            _df['location'] = location
+            _df = _df.rename(columns={
+            'mean_nc0p5': 'nc0p5',
+            'mean_nc1p0': 'nc1p0',
+            'mean_nc2p5': 'nc2p5'
+            })
+
+        df = _df
         df['time'] = df.index.tz_convert(tz=TZ)
         df.reset_index(drop=True, inplace=True)
         

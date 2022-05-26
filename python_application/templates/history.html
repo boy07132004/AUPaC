@@ -9,6 +9,7 @@
                 <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}}>{{location}}</li>
             {% endfor %}
         </ul>
+        <input type="checkbox" id="3_min_avg" checked="checked">3_min_avg
         <pre> From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">   <input type="button" onClick='cb();' value="Query data"></pre> 
         <input type='button' onClick="download();" value="download">
         <input type='button' onClick="delete_history();" value="delete">
@@ -23,7 +24,8 @@
     returnJSONFormat = {
         "downloadFile" : false,
         "location"   : [],
-        "sizeBinary": 15
+        "sizeBinary": 15,
+        "threeMinAvg": false
     }
     
     function get_location(){
@@ -45,6 +47,11 @@
     function cb(){
         var returnJSON = returnJSONFormat;
         returnJSON.location =  get_location();
+
+        if (document.getElementById("3_min_avg").checked){
+            returnJSON.threeMinAvg = true;
+        }
+
         if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
         else{            
             [returnJSON.startDate, returnJSON.endDate] = get_date();

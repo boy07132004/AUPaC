@@ -57,8 +57,13 @@ services:
             - "8080:80"
         links:
             - python_application
-        
-            
+    
+    grafana:
+        image: grafana/grafana-oss
+        restart: unless-stopped
+        ports:
+            - 3000:3000
+          
         
 volumes:
     db_data:
