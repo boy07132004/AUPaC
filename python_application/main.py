@@ -1,10 +1,7 @@
-from collections import defaultdict
-from email import header
-import mimetypes
 import os
 import time
 import json
-from httplib2 import Response
+from unittest import result
 import plotly
 import datetime
 import pandas as pd
@@ -45,55 +42,68 @@ def get_query_location():
 
     return locationList
 
+def query_result_process(queryResult):
+    result = {}
+
+    for key, value in queryResult.items():
+        if not isinstance(key, tuple): continue
+        location = key[1][0][1]
+        df = value.dropna()
+        df.loc[:, 'location'] = 'location'
+        df.loc[:, 'time'] = df.index.tz_convert(tz=TZ)
+        df.reset_index(drop=True, inplace=True)
+        df = df.rename(columns={
+                'mean_nc0p5': 'nc0p5',
+                'mean_nc1p0': 'nc1p0',
+                'mean_nc2p5': 'nc2p5'
+            }
+        )
+        result[location] = df
+    
+    return result
+
+def query_history(ret, locationString):
+    result = {}
+    startDate = ret['startDate']
+    endDate = ret['endDate']
+    
+    if ret['threeMinAvg']:
+        query = f"SELECT MEAN(*) FROM sps30 WHERE location='{locationString}' AND " \
+                + f"time>'{startDate}' AND time<'{endDate}' " \
+                + "GROUP BY time(3m), location tz('{TZ}')"
+    else:
+        query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time>'{startDate}' AND time<'{endDate}' GROUP BY location tz('{TZ}')"
+
+    queryResult = CLIENTDF.query(query)
+    
+    return query_result_process(queryResult)
+
+def query_realtime(ret, locationString):
+    query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m GROUP BY location tz('{TZ}')"
+    queryResult = CLIENTDF.query(query)
+    
+    return query_result_process(queryResult)
+
+
 @app.route('/')
 @app.route('/realtime')
 def realtime_plot():
     return render_template('real-time.html', locationList = get_query_location())
 
 @app.route('/callback', methods=["GET"])
-def plot_graph():
+def callback():
     try:
         ret = json.loads(request.args.get('returnJSON'))
         locations = ret['location']
         locationString = "' OR location='".join(locations)
         
         if 'startDate' in ret:
-            startDate = ret['startDate']
-            endDate = ret['endDate']
-
-            if ret['threeMinAvg']:
-                query = f"SELECT MEAN(*) FROM sps30 WHERE location='{locations[0]}' AND " \
-                        + f"time>'{startDate}' AND time<'{endDate}' " \
-                        + "GROUP BY time(3m), location"
-            else:
-                query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time>'{startDate}' AND time<'{endDate}'"
+            data = query_history(ret, locationString)
         else:
-            query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m"
-        
-        query+= f" tz('{TZ}')"
-        df = CLIENTDF.query(query)
-        print('sps30' in df)
-        if 'sps30' in df:
-            _df = df['sps30']
-        else:
-            print(df.keys())
-            for k, v in df.items():
-                location = k[1][0][1]
-                _df = v.dropna()
-                break
-
-            _df['location'] = location
-            _df = _df.rename(columns={
-            'mean_nc0p5': 'nc0p5',
-            'mean_nc1p0': 'nc1p0',
-            'mean_nc2p5': 'nc2p5'
-            })
-
-        df = _df
-        df['time'] = df.index.tz_convert(tz=TZ)
-        df.reset_index(drop=True, inplace=True)
+            data = query_realtime(ret, locationString)
         
         if ret['downloadFile']:
+            df = pd.concat(data.values())
             fileBuffer = StringIO()
             df.to_csv(fileBuffer, encoding='utf-8')
             csvOutput = fileBuffer.getvalue()
@@ -106,17 +116,19 @@ def plot_graph():
             resp.headers['Content-type'] = 'text/csv'
 
             return resp
-            
-        
+             
         sizeSelected = ret['sizeBinary']
         dataframeReturned = {}
+
         for location in locations:
+            
+            if location not in data: continue
             _sizeSelected = sizeSelected
-            _df = df[ df['location']==location ]
+            _df = data[location]
         
             if _df.empty : continue
-            if not ('startDate' in ret): _df = _df.tail(20) # For real-time page
-                
+            if 'startDate' not in ret: _df = _df.tail(20)
+            
             _fig = go.FigureWidget()
             
             for size in ['nc0p5', 'nc1p0', 'nc2p5']:
@@ -125,6 +137,7 @@ def plot_graph():
                 _sizeSelected = _sizeSelected>>1
     
             dataframeReturned[location] = json.dumps(_fig, cls=plotly.utils.PlotlyJSONEncoder)
+        
         return json.dumps(dataframeReturned)
     
     except Exception as e:
@@ -194,5 +207,5 @@ def contour_callback():
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",debug=False)
+    app.run(debug=False)
     

@@ -4,13 +4,18 @@
 {% block title %} Real-time particle sensor plot {% endblock %}
 
 {% block main %}
-        <ul id="location_checkbox_list">Location
+        <br>
+        <ul id="location_checkbox_list">Location :
             {% for location in locationList %}
                 <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}}>{{location}}</li>
             {% endfor %}
         </ul>
-        <input type="checkbox" id="3_min_avg" checked="checked">3_min_avg
-        <pre> From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">   <input type="button" onClick='cb();' value="Query data"></pre> 
+        <ul>
+            Setting : <input type="checkbox" id="3_min_avg" checked="checked">3_min_avg
+        </ul>
+        <ul>
+            From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">   <input type="button" onClick='cb();' value="Query data">
+        </ul>
         <input type='button' onClick="download();" value="download">
         <input type='button' onClick="delete_history();" value="delete">
         <a id="download"></a>
@@ -47,10 +52,7 @@
     function cb(){
         var returnJSON = returnJSONFormat;
         returnJSON.location =  get_location();
-
-        if (document.getElementById("3_min_avg").checked){
-            returnJSON.threeMinAvg = true;
-        }
+        returnJSON.threeMinAvg = document.getElementById("3_min_avg").checked;
 
         if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
         else{            
