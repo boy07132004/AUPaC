@@ -1,7 +1,6 @@
 import os
 import time
 import json
-from unittest import result
 import plotly
 import datetime
 import pandas as pd
@@ -53,9 +52,9 @@ def query_result_process(queryResult):
         df.loc[:, 'time'] = df.index.tz_convert(tz=TZ)
         df.reset_index(drop=True, inplace=True)
         df = df.rename(columns={
-                'mean_nc0p5': 'nc0p5',
-                'mean_nc1p0': 'nc1p0',
-                'mean_nc2p5': 'nc2p5'
+                'mean_nc0p5': 'nc0p5', 'mean_nc1p0': 'nc1p0',
+                'mean_nc2p5': 'nc2p5', 'max_nc0p5': 'nc0p5',
+                'max_nc1p0': 'nc1p0',  'max_nc2p5': 'nc2p5'
             }
         )
         result[location] = df
@@ -67,12 +66,17 @@ def query_history(ret, locationString):
     startDate = ret['startDate']
     endDate = ret['endDate']
     
-    if ret['threeMinAvg']:
+    if ret['dataType'] == "avg":
         query = f"SELECT MEAN(*) FROM sps30 WHERE location='{locationString}' AND " \
                 + f"time>'{startDate}' AND time<'{endDate}' " \
-                + "GROUP BY time(3m), location tz('{TZ}')"
+                + f"GROUP BY time(3m), location tz('{TZ}')"
+    elif ret['dataType'] == 'max':
+        query = f"SELECT MAX(*) FROM sps30 WHERE location='{locationString}' AND " \
+                + f"time>'{startDate}' AND time<'{endDate}' " \
+                + f"GROUP BY time(3m), location tz('{TZ}')"
     else:
-        query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time>'{startDate}' AND time<'{endDate}' GROUP BY location tz('{TZ}')"
+        query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND " \
+                + f"time>'{startDate}' AND time<'{endDate}' GROUP BY location tz('{TZ}')"
 
     queryResult = CLIENTDF.query(query)
     

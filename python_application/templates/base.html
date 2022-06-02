@@ -5,12 +5,13 @@
         <style> 
             ul#location_checkbox_list li{display : inline }
             ul#particle_size_checkbox_list li{display : inline }
-            pre, ul, li, input {font-size:5vh}
+            pre, ul, li, input, select {font-size:5vh}
             input[type="checkbox"]{
                 width: 5vh; height: 5vh;
                 cursor: pointer;
             }
         </style>
+        {% block script %}{% endblock %}
     </head>
     
     <body>
@@ -21,6 +22,4 @@
             {% block main %}{% endblock %}
         </main>
     </body>
-
-    {% block script %}{% endblock %}
 </html>

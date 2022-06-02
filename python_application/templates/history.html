@@ -4,33 +4,38 @@
 {% block title %} Real-time particle sensor plot {% endblock %}
 
 {% block main %}
-        <br>
         <ul id="location_checkbox_list">Location :
             {% for location in locationList %}
                 <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}}>{{location}}</li>
             {% endfor %}
         </ul>
         <ul>
-            Setting : <input type="checkbox" id="3_min_avg" checked="checked">3_min_avg
+            Data type : 
+            <select id="dataType" value="avg">
+                <option value="avg">3_min_avg</option>
+                <option value="max">3_min_max</option>
+                <option value="raw">raw data</option>
+            </select>
         </ul>
         <ul>
-            From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">   <input type="button" onClick='cb();' value="Query data">
+            From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">
         </ul>
-        <input type='button' onClick="download();" value="download">
-        <input type='button' onClick="delete_history();" value="delete">
+            <input type="button" onClick="cb();" value="Query">
+            <input type='button' onClick="download();" value="Download">
+            <input type='button' onClick="delete_history();" value="Delete">
         <a id="download"></a>
         <ul id="plotList"></ul>
 {% endblock %}
 
 {% block script %}
-<script src="../static/js/plotly-latest.min.js"></script>
-<script src="../static/js/google_api_ajax.js"></script>
+<script src="{{url_for('static', filename='js/google_api_ajax.js')}}"></script>
+<script src="{{url_for('static', filename='js/plotly-latest.min.js')}}"></script>
 <script>
     returnJSONFormat = {
         "downloadFile" : false,
         "location"   : [],
         "sizeBinary": 15,
-        "threeMinAvg": false
+        "dataType": ""
     }
     
     function get_location(){
@@ -52,7 +57,7 @@
     function cb(){
         var returnJSON = returnJSONFormat;
         returnJSON.location =  get_location();
-        returnJSON.threeMinAvg = document.getElementById("3_min_avg").checked;
+        returnJSON.dataType = document.getElementById("dataType").value;
 
         if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
         else{            
@@ -86,7 +91,9 @@
     function download(){
         var returnJSON = returnJSONFormat;
         returnJSON.location =  get_location();
-        if (returnJSON.location.length == 0) alert("Select the location checkbox to query data.");
+        if (returnJSON.location.length == 0){
+            alert("Select the location checkbox to query data.");
+        }
         else{            
             [returnJSON.startDate, returnJSON.endDate] = get_date();
             returnJSON.downloadFile = true;
@@ -102,7 +109,7 @@
                 link.href = window.URL.createObjectURL(blob);
                 link.download = filename;
                 link.click();
-                }
+            }
             req.send();
         }
     }
