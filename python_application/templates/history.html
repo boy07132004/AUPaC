@@ -20,16 +20,14 @@
         <ul>
             From : <input type ="date" id="startDate" value="{{startDate}}"> To : <input type ="date" id="endDate" value="{{endDate}}">
         </ul>
-            <input type="button" onClick="cb();" value="Query">
+            <input type='button' onClick="cb();" value="Query">
             <input type='button' onClick="download();" value="Download">
             <input type='button' onClick="delete_history();" value="Delete">
         <a id="download"></a>
         <ul id="plotList"></ul>
 {% endblock %}
 
-{% block script %}
-<script src="{{url_for('static', filename='js/google_api_ajax.js')}}"></script>
-<script src="{{url_for('static', filename='js/plotly-latest.min.js')}}"></script>
+{% block after_script %}
 <script>
     returnJSONFormat = {
         "downloadFile" : false,

@@ -5,7 +5,7 @@
 {% block main %}
         <ul id="location_checkbox_list">Location
                 {% for location in locationList %}
-                    <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}} checked=true onChange="location_change_callback()">{{location}}</li>
+                    <li><input type="checkbox" class="location" id="checkbox_{{location}}" name={{location}} onChange="location_change_callback()">{{location}}</li>
                 {% endfor %}
         </ul>
         
@@ -14,7 +14,7 @@
                 <li><input type="checkbox" id="1p0" class="size" checked="checked" onChange="size_change_callback()">0.3~1.0</li>
                 <li><input type="checkbox" id="2p5" class="size" checked="checked" onChange="size_change_callback()">0.3~2.5</li>
         </ul>
-        <ul id="plotList">
+        <ul id="plotList" hidden=true>
             {% for location in locationList %}
                    <li id={{location}} class='test'>
                        <h1>{{location}}</h1>
@@ -24,17 +24,15 @@
         </ul>
 {% endblock %}
 
-{% block script %}
-<script src="../static/js/plotly-latest.min.js"></script>
-
-<script src="../static/js/google_api_ajax.js"></script>
+{% block after_script %}
 
 <script>
     returnJSON = {
         "downloadFile": false
-        }
+    }
     //
     function location_change_callback(){
+        var plotList = document.getElementById("plotList");
         returnJSON.location = [];
         document.querySelectorAll('.location').forEach((item, idx) =>{
             if (item.checked){
@@ -58,7 +56,6 @@
     location_change_callback();
     size_change_callback();
     //
-    const plotList = document.getElementById("plotList");
     function cb(){
         if (returnJSON.location.length * returnJSON.sizeBinary){
             if (plotList.hidden) plotList.hidden = false;

@@ -45,6 +45,7 @@ def query_result_process(queryResult):
     result = {}
 
     for key, value in queryResult.items():
+        print(key, value)
         if not isinstance(key, tuple): continue
         location = key[1][0][1]
         df = value.dropna()
@@ -85,7 +86,7 @@ def query_history(ret, locationString):
 def query_realtime(ret, locationString):
     query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m GROUP BY location tz('{TZ}')"
     queryResult = CLIENTDF.query(query)
-    
+    print(queryResult)
     return query_result_process(queryResult)
 
 
@@ -100,7 +101,7 @@ def callback():
         ret = json.loads(request.args.get('returnJSON'))
         locations = ret['location']
         locationString = "' OR location='".join(locations)
-        
+        print(ret)
         if 'startDate' in ret:
             data = query_history(ret, locationString)
         else:
@@ -123,7 +124,6 @@ def callback():
              
         sizeSelected = ret['sizeBinary']
         dataframeReturned = {}
-
         for location in locations:
             
             if location not in data: continue

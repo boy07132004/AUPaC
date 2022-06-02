@@ -11,7 +11,9 @@
                 cursor: pointer;
             }
         </style>
-        {% block script %}{% endblock %}
+        <script src="{{url_for('static', filename='js/google_api_ajax.js')}}"></script>
+        <script src="{{url_for('static', filename='js/plotly-latest.min.js')}}"></script>
+        {% block pre_script %}{% endblock %}
     </head>
     
     <body>
@@ -22,4 +24,5 @@
             {% block main %}{% endblock %}
         </main>
     </body>
+        {% block after_script %}{% endblock %}
 </html>
