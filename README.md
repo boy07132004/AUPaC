@@ -41,7 +41,7 @@
 
     1. 下載及安裝 Docker、Docker-compose  // 若有安裝可略過
         
-        `sudo apt update && sudo apt install docker docker-compose`
+        `sudo apt update && sudo apt install -y docker docker-compose`
         
         `sudo usermod -aG docker $USER`
     
@@ -50,7 +50,7 @@
         
         在專案資料夾終端機中執行
         
-         `docker-compose up —build` 
+         `docker-compose up` 
         
     
 ## 網頁操作

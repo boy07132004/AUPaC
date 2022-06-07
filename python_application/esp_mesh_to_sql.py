@@ -58,7 +58,7 @@ def insert(dataQueue):
 
     s = time.time()
     CLIENT.write_api(write_options=SYNCHRONOUS).write(bucket=BUCKET, record=payload)
-    print(f"Upload {count} data, cost {time.time()-s:.4} seconds")
+    #print(f"Upload {count} data, cost {time.time()-s:.4} seconds")
     
 def main():
     dataQueue = queue.Queue(maxsize=0)

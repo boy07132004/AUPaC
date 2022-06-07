@@ -77,7 +77,6 @@ void node_write_task(void *arg)
             continue;
         }
 
-        //size = sprintf(data, "%s", send_sps30_data_to_root());
         size = send_sps30_data_to_root(data);
         ret = mwifi_write(NULL, &data_type, data, size, true);
         MDF_ERROR_CONTINUE(ret != MDF_OK, "mwifi_write, ret: %x", ret);

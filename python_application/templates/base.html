@@ -5,23 +5,24 @@
         <style> 
             ul#location_checkbox_list li{display : inline }
             ul#particle_size_checkbox_list li{display : inline }
-            pre, ul, li, input {font-size:5vh}
+            pre, ul, li, input, select {font-size:5vh}
             input[type="checkbox"]{
                 width: 5vh; height: 5vh;
                 cursor: pointer;
             }
         </style>
+        <script src="{{url_for('static', filename='js/google_api_ajax.js')}}"></script>
+        <script src="{{url_for('static', filename='js/plotly-latest.min.js')}}"></script>
+        {% block pre_script %}{% endblock %}
     </head>
     
     <body>
         <input type="button" onclick="javascript:location.href='/realtime'" value = "Real-time">
         <input type="button" onclick="javascript:location.href='/history'" value = "History">
+        <!-- <input type="button" onclick="javascript:location.href='/contour'" value = "Contour"> -->
         <main>
-            
-            
             {% block main %}{% endblock %}
         </main>
     </body>
-
-    {% block script %}{% endblock %}
+        {% block after_script %}{% endblock %}
 </html>
