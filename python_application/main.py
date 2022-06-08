@@ -52,12 +52,13 @@ def query_result_process(queryResult):
         df.loc[:, 'location'] = 'location'
         df.loc[:, 'time'] = df.index.tz_convert(tz=TZ)
         df.reset_index(drop=True, inplace=True)
-        df = df.rename(columns={
-                'mean_nc0p5': 'nc0p5', 'mean_nc1p0': 'nc1p0',
-                'mean_nc2p5': 'nc2p5', 'max_nc0p5': 'nc0p5',
-                'max_nc1p0': 'nc1p0',  'max_nc2p5': 'nc2p5'
-            }
-        )
+        df.rename(columns={'mean_nc0p5': 'nc0p5', 'mean_nc1p0': 'nc1p0',
+                           'mean_nc2p5': 'nc2p5', 'max_nc0p5': 'nc0p5',
+                           'max_nc1p0': 'nc1p0',  'max_nc2p5': 'nc2p5',
+                           'count_nc0p5': 'nc0p5', 'count_nc1p0' :'nc1p0',
+                           'count_nc2p5': 'nc2p5'},
+                  inplace=True)
+        
         result[location] = df
     
     return result
@@ -75,6 +76,10 @@ def query_history(ret, locationString):
         query = f"SELECT MAX(*) FROM sps30 WHERE location='{locationString}' AND " \
                 + f"time>'{startDate}' AND time<'{endDate}' " \
                 + f"GROUP BY time(3m), location tz('{TZ}')"
+    elif ret['dataType'] == 'count':
+        query = f"SELECT COUNT(*) FROM sps30 WHERE location='{locationString}' AND " \
+                + f"time>'{startDate}' AND time<'{endDate}' " \
+                + f"GROUP BY time(1m), location tz('{TZ}')"
     else:
         query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND " \
                 + f"time>'{startDate}' AND time<'{endDate}' GROUP BY location tz('{TZ}')"
