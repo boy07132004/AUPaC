@@ -89,7 +89,7 @@ def query_history(ret, locationString):
 def query_realtime(ret, locationString):
     query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m GROUP BY location tz('{TZ}')"
     queryResult = CLIENTDF.query(query)
-    logging.INFO(queryResult)
+    logging.info(queryResult)
     return query_result_process(queryResult)
 
 
@@ -104,7 +104,7 @@ def callback():
         ret = json.loads(request.args.get('returnJSON'))
         locations = ret['location']
         locationString = "' OR location='".join(locations)
-        logging.INFO(ret)
+        logging.info(ret)
         if 'startDate' in ret:
             data = query_history(ret, locationString)
         else:
