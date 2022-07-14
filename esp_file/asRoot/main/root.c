@@ -141,7 +141,7 @@ void app_main()
     // @brief Data transfer between wifi mesh devices
     xTaskCreate(root_task, "root_task", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
 
-    TimerHandle_t timer = xTimerCreate("print_system_info", 10000 / portTICK_RATE_MS,
+    TimerHandle_t timer = xTimerCreate("print_system_info", 20000 / portTICK_RATE_MS,
                                        true, NULL, print_system_info_timercb);
     xTimerStart(timer, 0);
 }

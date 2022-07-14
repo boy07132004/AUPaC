@@ -27,6 +27,13 @@ void sps_setup(){
         printf("FW: %u.%u\n", fw_major, fw_minor);
     }
 
+    ret = sps30_set_fan_auto_cleaning_interval(0);
+    if (ret) {
+        printf("error cleaning\n");
+    } else {
+        printf("Cleaning disabled.\n");
+    }
+
     char serial_number[SPS30_MAX_SERIAL_LEN];
     ret = sps30_get_serial(serial_number);
     if (ret) {
@@ -45,17 +52,22 @@ void sps_setup(){
 size_t send_sps30_data_to_root(char* data){
     size_t size = 0;
     ret = sps30_read_measurement(&m);
-        if (ret < 0) {
-            printf("error reading measurement\n");
+    if (ret < 0) {
+        printf("error reading measurement\n");
 
-        } else {
-            size = sprintf( data,
-                    "{\"location\":\"%s\","
-                    "\"NC0.5\":%0.2f,"
-                    "\"NC1.0\":%0.2f,"
-                    "\"NC2.5\":%0.2f}"
-            , CONFIG_LOCATION, m.nc_0p5, m.nc_1p0, m.nc_2p5);
-        }
+    } else {
+        size = sprintf( data,
+                "{\"location\":\"%s\","
+                "\"nc0p5\":%0.2f,"
+                "\"nc1p0\":%0.2f,"
+                "\"nc2p5\":%0.2f,"
+                "\"layer\":%d,"
+                "\"rssi\":%d,"
+                "\"heap\":%u"
+                "}"
+        , CONFIG_LOCATION, m.nc_0p5, m.nc_1p0-m.nc_0p5, m.nc_2p5-m.nc_1p0
+        , esp_mesh_get_layer(), mwifi_get_parent_rssi(), esp_get_free_heap_size());
+    }
     return size;
 }
 
@@ -67,7 +79,8 @@ void node_write_task(void *arg)
     static int cnt= 0;
     char *data    = MDF_MALLOC(MWIFI_PAYLOAD_LEN);
     mwifi_data_type_t data_type = {0x0};
-
+    TickType_t lastDataTime = xTaskGetTickCount();
+    
     MDF_LOGI("Node write task is running");
     gpio_pad_select_gpio(2);
     gpio_set_direction(2, GPIO_MODE_OUTPUT);
@@ -77,12 +90,16 @@ void node_write_task(void *arg)
             continue;
         }
 
+        
+        while ((xTaskGetTickCount() - lastDataTime) < 999/portTICK_RATE_MS);
+        lastDataTime = xTaskGetTickCount();
         size = send_sps30_data_to_root(data);
         ret = mwifi_write(NULL, &data_type, data, size, true);
+    
+        
         MDF_ERROR_CONTINUE(ret != MDF_OK, "mwifi_write, ret: %x", ret);
-
-        vTaskDelay(1000 / portTICK_RATE_MS);
         gpio_set_level(2, cnt++%2);
+        if (cnt>9999) cnt = 0;
     }
 
     MDF_LOGW("Node write task is exit");
@@ -202,7 +219,7 @@ void app_main()
 
     xTaskCreate(node_write_task, "node_write_task", 4 * 1024, NULL, CONFIG_MDF_TASK_DEFAULT_PRIOTY, NULL);
 
-    TimerHandle_t timer = xTimerCreate("print_system_info", 10000 / portTICK_RATE_MS,
+    TimerHandle_t timer = xTimerCreate("print_system_info", 20000 / portTICK_RATE_MS,
                                        true, NULL, print_system_info_timercb);
     xTimerStart(timer, 0);
 }

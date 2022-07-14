@@ -1,13 +1,16 @@
+from crypt import methods
 import os
 import time
 import json
 import plotly
+import logging
 import datetime
 import pandas as pd
 import gstools as gs
 from io import StringIO
 from numpy import array, arange
 import plotly.graph_objects as go
+from aupac_log import aupac_log_init
 from pykrige.ok import OrdinaryKriging
 from influxdb import InfluxDBClient, DataFrameClient
 from flask import Flask, render_template, request, make_response
@@ -30,7 +33,7 @@ while True:
         
     except:
         time.sleep(5)
-        print("Connection failed. Retry in 5 seconds....")
+        logging.warning("Connection failed. Retry in 5 seconds....")
 
 
 def get_query_location():
@@ -45,18 +48,13 @@ def query_result_process(queryResult):
     result = {}
 
     for key, value in queryResult.items():
-        print(key, value)
         if not isinstance(key, tuple): continue
         location = key[1][0][1]
         df = value.dropna()
         df.loc[:, 'location'] = 'location'
         df.loc[:, 'time'] = df.index.tz_convert(tz=TZ)
         df.reset_index(drop=True, inplace=True)
-        df.rename(columns={'mean_nc0p5': 'nc0p5', 'mean_nc1p0': 'nc1p0',
-                           'mean_nc2p5': 'nc2p5', 'max_nc0p5': 'nc0p5',
-                           'max_nc1p0': 'nc1p0',  'max_nc2p5': 'nc2p5',
-                           'count_nc0p5': 'nc0p5', 'count_nc1p0' :'nc1p0',
-                           'count_nc2p5': 'nc2p5'},
+        df.rename(columns=lambda name: name.spilt('_')[1] if '_' in name else name,
                   inplace=True)
         
         result[location] = df
@@ -79,7 +77,7 @@ def query_history(ret, locationString):
     elif ret['dataType'] == 'count':
         query = f"SELECT COUNT(*) FROM sps30 WHERE location='{locationString}' AND " \
                 + f"time>'{startDate}' AND time<'{endDate}' " \
-                + f"GROUP BY time(1m), location tz('{TZ}')"
+                + f"GROUP BY time(1h), location tz('{TZ}')"
     else:
         query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND " \
                 + f"time>'{startDate}' AND time<'{endDate}' GROUP BY location tz('{TZ}')"
@@ -91,7 +89,7 @@ def query_history(ret, locationString):
 def query_realtime(ret, locationString):
     query = f"SELECT * FROM sps30 WHERE location='{locationString}' AND time> now()-5m GROUP BY location tz('{TZ}')"
     queryResult = CLIENTDF.query(query)
-    print(queryResult)
+    logging.INFO(queryResult)
     return query_result_process(queryResult)
 
 
@@ -106,7 +104,7 @@ def callback():
         ret = json.loads(request.args.get('returnJSON'))
         locations = ret['location']
         locationString = "' OR location='".join(locations)
-        print(ret)
+        logging.INFO(ret)
         if 'startDate' in ret:
             data = query_history(ret, locationString)
         else:
@@ -141,7 +139,7 @@ def callback():
             _fig = go.FigureWidget()
             
             for size in ['nc0p5', 'nc1p0', 'nc2p5']:
-                if _sizeSelected %2 :
+                if _sizeSelected&1:
                     _fig.add_scatter(x=_df.time, y=_df[size], name=size)
                 _sizeSelected = _sizeSelected>>1
     
@@ -150,7 +148,7 @@ def callback():
         return json.dumps(dataframeReturned)
     
     except Exception as e:
-        print(f"Callback error. \n{e}")
+        logging.error(f"Callback error. \n{e}")
         
 @app.route("/history")
 def history():
@@ -177,8 +175,17 @@ def delete_history():
 def contour_map():
     return render_template("contour.html")
 
+
+@app.route("/contourConfig", methods=['POST'])
+def set_contour_config():
+    #global pixelMap
+    #pixelMap = request.values['']
+    return render_template("contour.html")
+
+
 @app.route("/contourCallback", methods=["GET"])
 def contour_callback():
+    #global pixelMap
     size = request.args.get('size')
     validSize = ['nc0p5', 'nc1p0', 'nc2p5']
     if not size in validSize:
@@ -216,5 +223,6 @@ def contour_callback():
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 if __name__ == "__main__":
+    aupac_log_init('/aupac_log.txt')
     app.run(debug=False)
     

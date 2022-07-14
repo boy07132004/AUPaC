@@ -1,4 +1,4 @@
 build/
-file_share/*
+file_share/*.csv
 .DS_Store
 __pycache__
